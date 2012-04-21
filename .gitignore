@@ -1,11 +1,5 @@
-#  Object Files
-*.OBJ
+# Oh dear, what could it be?
+*.PWD
 
-# List Files
-*.LST
-
-# Map files
-*.MAP
-
-# Executable files
-*.EXE
+# Annoying
+*.swp
