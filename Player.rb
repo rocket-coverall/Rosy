@@ -9,10 +9,26 @@ class Player
 
     @hand = Hand.new self
 
+    @data = {shuffles: 2}
+
+  end
+
+  def data
+    @data
   end
 
   def deck
     @deck
+  end
+
+  def use_shuffle
+    if data[:shuffles]>0
+      data[:shuffles]-=1
+      shuffle
+      return true
+    else
+      return false
+    end
   end
 
   def nick
@@ -27,12 +43,34 @@ class Player
     @hand
   end
 
+  def id
+    @id
+  end
+
   def hand= h
     @hand = h
   end
 
   def field 
     @field
+  end
+
+  def activate_cards
+    field.activate_all
+  end
+
+  def play_from_hand position=1, force=false
+    c = hand.slots[position].card
+    s = c.stats[:size]
+    return false if ((field.total_size+s)>10)and(not force)
+    field.add c
+    $global.log :card_played
+    return true if position==4
+    (position..3).each do |i|
+      hand.slots[i].card = hand.slots[i+1].card
+    end
+    hand.slots[4].card = nil
+    
   end
 
   def draw_to num=5
@@ -85,7 +123,7 @@ class Player
   end
 
   def opponent
-   return $global.players[id^1]
+    return $global.players[id^1]
   end
 
   def health

@@ -11,6 +11,14 @@ class Slot
     card.run script, param
   end
 
+  def position
+    @position
+  end
+
+  def position= p
+    @position = p
+  end
+
   def card= card
     @card = card
   end
@@ -52,6 +60,12 @@ class Slot
     self.enabled?
   end
 
+
+  def empty?
+    return true if card
+    return false unless card
+  end
+
   def activate
     self.enable
   end
@@ -91,9 +105,11 @@ class Slot
 
   def attack b=false, t=nil
 
-    return self.dirrect unless self.player.opponent.field.has_followers?
+    return self.dirrect unless self.opponent.field.has_followers?
 
     esl = self.opponent.field.random_follower
+
+    puts "#{self.player.nick}'#{self.position.to_s} -atk-> #{self.player.nick}'#{esl.position.to_s}"
     
     self.run :attack, self, esl # launch "before attacking" abilities
     $global.check_stuff
@@ -106,11 +122,10 @@ class Slot
     esl.run :defence, self, esl # launch "before defending" abilities
     $global.check_stuff
 
-    # TODO deal the motherfucking damage!!!
-
     if (esl.follower?)&&(self.follower?) 
-      esl.card.stats[:stamina] -= self.card.stats[:attack]-esl.card.stats[:defence]
-      $global.log :damage, dmg, {type: :follower, slot: esl}, src, type
+      dmg = self.card.stats[:attack]-esl.card.stats[:defence]
+      esl.card.stats[:stamina] -= dmg
+      $global.log :damage, dmg, {type: :follower, slot: esl}, self, :combat
     end
 
     $global.check_stuff
@@ -130,7 +145,7 @@ class Slot
   end
 
   def dirrect
-    self.player.opponent.damage self.card.size, self, :direct
+    self.player.opponent.damage self.card.stats[:size], self, :direct
     self.deactivate
   end
   
@@ -157,10 +172,18 @@ class Zone
     (1..num).each { |i| @slots+=[Slot.new(player, i)] } 
     @player = player
   end
+
+  def activate_all
+    @slots.each { |s| s.activate if s.card }  
+  end
    
 
   def player
     @player
+  end
+
+  def opponent
+    @player.opponent
   end
 
   def slots
@@ -188,6 +211,18 @@ class Zone
     slots.delete nil
 
     
+  end
+
+  def full_slots
+    full_slots = []
+    @slots.each { |s| full_slots << s unless s.empty? }
+    full_slots
+  end
+
+  def total_size
+    res = 0
+    @slots.each { |s| res += s.card.stats[:size] if s.card }
+    res
   end
 
   def followers

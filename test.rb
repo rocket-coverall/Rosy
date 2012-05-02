@@ -13,7 +13,7 @@ h = {id: 2}
 rio = Card.new h
 
 
-p1 = Player.new 1, 'nvm', nil, Card.new(rio.data)
+p1 = Player.new 0, 'nvm', nil, Card.new(rio.data)
 
 d1 = Deck.new p1, 0
 
@@ -28,7 +28,7 @@ puts d1.slots.length
 
 p1.deck = d1
 
-p2 = Player.new 2, 'frtt', nil, Card.new(rio.data)
+p2 = Player.new 1, 'frtt', nil, Card.new(rio.data)
 
 d2 = Deck.new p2, 0
 d2.append Card.new gamestarter.data
@@ -44,13 +44,21 @@ p1.draw_to 5
 
 p2.draw_to 5
 
+
+p2.play_from_hand 1
+p1.play_from_hand 1
+p1.play_from_hand 1
+
 puts 'game info'
+
 
 puts $global.game_info
 
-$global.players[1].hand.slots[1].card.stats[:stamina] = 0
 
-$global.check_stuff
+$global.activate_cards
+
+
+$global.fight_sequence
 
 puts $global.game_info
 
