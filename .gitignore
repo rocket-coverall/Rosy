@@ -3,3 +3,10 @@
 
 # Annoying
 *.swp
+
+# vim stuff
+*~
+.vimrc
+
+# stackdump, w/e
+*.stacksump
