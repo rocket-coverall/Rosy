@@ -23,9 +23,6 @@ d1.append Card.new gamestarter.data
 d1.append Card.new gamestarter.data
 d1.append Card.new gamestarter.data
 
-puts 'l'
-puts d1.slots.length
-
 p1.deck = d1
 
 p2 = Player.new 1, 'frtt', nil, Card.new(rio.data)
@@ -38,28 +35,7 @@ p2.deck = d2
 
 $global = Game.new p1, p2
 
-puts p1.deck.slots.length
 
-p1.draw_to 5
-
-p2.draw_to 5
-
-
-p2.play_from_hand 1
-p1.play_from_hand 1
-p1.play_from_hand 1
-
-puts 'game info'
-
-
-puts $global.game_info
-
-
-$global.activate_cards
-
-
-$global.fight_sequence
-
-puts $global.game_info
-
+puts "GAME START"
+$global.game_start
 

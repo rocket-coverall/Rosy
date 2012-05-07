@@ -21,6 +21,10 @@ class Player
     @deck
   end
 
+  def character
+    @character
+  end
+
   def use_shuffle
     if data[:shuffles]>0
       data[:shuffles]-=1
@@ -77,8 +81,6 @@ class Player
 
     num = num-(5-self.hand.room)
 
-    puts num.to_s+' draw'
-
     return true unless num>=0
 
     return false unless self.deck.slots.length>0
@@ -90,10 +92,6 @@ class Player
     end
 
     true
-
-    puts 'drew'
-
-    self.hand.slots.each { |s| puts s.to_s }
 
     $global.log :draw
     

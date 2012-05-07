@@ -32,7 +32,6 @@ class Game
   def next_phase
     return @phases[0] unless @phases [@phase+1]
     @phases [@phase+1]
-    $global.log :next_phase, @phase
   end
 
   def next_turn!
@@ -45,12 +44,12 @@ class Game
     @phase += 1 if @phases[@phase+1]
 
     self.next_turn! if self.phase == :begin
+
+    $global.log 'phase '+@phases[@phase].to_s
   end
 
-  def fight_sequence 
-    r = [0,1].sample
-#    r = 0
-    @coinflip = r
+  def fight_sequence
+    r = @coinflip
     p = players[r]
     $global.log "COINFLIP: #{p.nick}"
 
@@ -77,15 +76,16 @@ class Game
 
     $global.log :coinflip, r
 
+    trigger_abilities :begin, p
+    trigger_abilities :begin, p.opponent
 
-
-    next_phase
+    next_phase!
 
     # draw step
     players[0].draw_to 5
     players[1].draw_to 5
 
-    next_phase
+    next_phase!
 
 #   time to play the fucking cards
 
@@ -93,28 +93,70 @@ class Game
   
   end
 
+  def trigger_abilities event, player
+    p = player
+    p.character.run event, p
+    p.field.slots.shuffle.each { |s| s.run(event, s) if s.card }
+  end
+
   def wait_for_players
-
+    
     @players_ready=[false,false]
-
+    puts 'Waiting for players...'
     @waiting = Thread.new do 
       sleep 30
-      next_phase
+      next_phase!
       battle_phase
-    end  
+    end
+    @waiting.join
   end
 
   def both_players_ready
     @waiting.kill
-    next_phase
+    next_phase!
     battle_phase
   end
 
   def battle_phase
+
+    @coinflip = [0,1].sample
+    $global.log :coinflip, @coinflip
+
     activate_cards
     unflip_cards
+
     fight_sequence
 
+    next_phase!
+    turn_end
+    
+  end
+
+  def turn_end
+    trigger_abilities :end, players[@coinflip]
+    trigger_abilities :end, players[@coinflip].opponent
+
+    next_phase!
+    turn_start
+  end
+
+  def turn_start
+    trigger_abilities :begin, players[@coinflip]
+    trigger_abilities :begin, players[@coinflip].opponent
+
+    next_phase!
+    draw_phase
+  end
+
+  def draw_phase
+    players.each { |p| p.draw_to 5 }
+
+    next_phase!
+    action_phase
+  end 
+
+  def action_phase
+    wait_for_players
   end
 
   def unflip_cards
