@@ -15,10 +15,16 @@ class Game
 
     @players_ready = [false, false]
 
+    @stop_game_flag = false
+
   end
 
   def coinflip
     @coinflip
+  end
+
+  def wait_thread
+    @waiting
   end
 
   def players
@@ -26,7 +32,8 @@ class Game
   end
 
   def phase 
-    @phases [@phase]
+    return @phases [@phase] unless @phase == :loss
+    @phase
   end
 
   def next_phase
@@ -40,12 +47,14 @@ class Game
   end
 
   def next_phase!
+    return false if @stop_game_flag
     @phase = 0 unless @phases [@phase+1]
     @phase += 1 if @phases[@phase+1]
 
     self.next_turn! if self.phase == :begin
 
     $global.log 'phase '+@phases[@phase].to_s
+    true
   end
 
   def fight_sequence
@@ -56,7 +65,7 @@ class Game
     while (p.field.active_cards_left?)||(p.opponent.field.active_cards_left?) 
       c = p.field.next_card
       if c
-        puts "PLAYING "+c.to_s+" FROM SLOT "+c.position.to_s+" OF PLAYER "+p.nick
+        puts "Active card #{c.to_s} in slot #{p.nick}.#{c.position.to_s}"
         c.play
       end
 
@@ -66,9 +75,22 @@ class Game
 
   end
 
+  def stop_game
+    @stop_game_flag = true
+    @phase = :loss
+  end
+
+  def game_loss player, reason
+    $global.log :loss, player, reason
+    stop_game
+    puts 'GAME LOSS ON TURN '+@turn_number.to_s
+    puts game_info
+  end
+
   def game_start
 
     # beginning of first turn
+
     r = [0,1].sample
     @coinflip = r
 
@@ -79,13 +101,13 @@ class Game
     trigger_abilities :begin, p
     trigger_abilities :begin, p.opponent
 
-    next_phase!
+    return true unless next_phase!
 
     # draw step
-    players[0].draw_to 5
-    players[1].draw_to 5
+    players[0].f_draw_to 5
+    players[1].f_draw_to 5
 
-    next_phase!
+    return true unless next_phase!
 
 #   time to play the fucking cards
 
@@ -103,17 +125,18 @@ class Game
     
     @players_ready=[false,false]
     puts 'Waiting for players...'
-    @waiting = Thread.new do 
+    @waiting = Thread.new do
       sleep 30
-      next_phase!
+      return true unless next_phase!
       battle_phase
     end
-    @waiting.join
+    
   end
 
   def both_players_ready
+    return false unless @waiting
     @waiting.kill
-    next_phase!
+    return true unless next_phase!
     battle_phase
   end
 
@@ -127,7 +150,7 @@ class Game
 
     fight_sequence
 
-    next_phase!
+    return true unless next_phase!
     turn_end
     
   end
@@ -136,7 +159,7 @@ class Game
     trigger_abilities :end, players[@coinflip]
     trigger_abilities :end, players[@coinflip].opponent
 
-    next_phase!
+    return true unless next_phase!
     turn_start
   end
 
@@ -144,14 +167,14 @@ class Game
     trigger_abilities :begin, players[@coinflip]
     trigger_abilities :begin, players[@coinflip].opponent
 
-    next_phase!
+    return true unless next_phase!
     draw_phase
   end
 
   def draw_phase
-    players.each { |p| p.draw_to 5 }
+    players.each { |p| p.f_draw_to 5 }
 
-    next_phase!
+    return true unless next_phase!
     action_phase
   end 
 
@@ -177,13 +200,13 @@ class Game
         slot.destroy if slot.card.stats[:stamina]<1
       end
       player.deck.followers.each do |slot|
-        next if follower.card.stats[:stamina]>0
+        next if slot.card.stats[:stamina]>0
         slot.destroy
         player.deck.remove_empty
       end      
 
       if player.health < 1
-        log :loss, player, :life
+        $global.game_loss player, :life
         return false
       end
     end
@@ -197,7 +220,7 @@ class Game
   end
 
   def log event, *param
-    puts event.to_s
+    puts '[LOG] '+event.to_s unless event==:draw
   end
 
   def game_info

@@ -109,7 +109,7 @@ class Slot
 
     esl = self.opponent.field.random_follower
 
-    puts "#{self.player.nick}'#{self.position.to_s} -atk-> #{self.player.nick}'#{esl.position.to_s}"
+    puts "ATK #{self.player.nick}.#{self.position.to_s} -> #{esl.player.nick}.#{esl.position.to_s}"
     
     self.run :attack, self, esl # launch "before attacking" abilities
     $global.check_stuff

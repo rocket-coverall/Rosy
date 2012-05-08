@@ -79,6 +79,7 @@ class Player
 
   def draw_to num=5
 
+
     num = num-(5-self.hand.room)
 
     return true unless num>=0
@@ -91,10 +92,14 @@ class Player
       self.hand.add self.deck.slots.shift.card
     end
 
-    true
+    $global.log :draw, self
 
-    $global.log :draw
+    true
     
+  end
+
+  def f_draw_to num=5
+    $global.game_loss(self, :draw) unless self.draw_to(num)
   end
 
   def shuffle
